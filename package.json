@@ -1,0 +1,15 @@
+{
+  "name": "crease-live-cricket",
+  "version": "1.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Live two-player arcade cricket with server-controlled matches",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "build": "node scripts-build.js",
+    "test": "node --test"
+  }
+}
