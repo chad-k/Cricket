@@ -1,4 +1,4 @@
-import {CHARACTERS,characterFor} from './public/characters.js';
+import {CHARACTERS,characterFor,easyTiming} from './public/characters.js';
 import {randomInt,randomUUID} from 'node:crypto';
 export const AVATARS=CHARACTERS.map(c=>c.icon);
 export const DURATIONS={pace:1450,slower:2050,spin:1800};
@@ -23,10 +23,11 @@ function usePower(g,role,power){
 function botPower(g,role){const status=powerStatus(g),available=role==='bat'?status.battingAvailable:status.bowlingAvailable;if(!available)return 'none';if((g.scores.at(-1).balls%6)===5||randomInt(100)<35)return characterFor(member(g,role==='bat'?g.batting:g.bowling).avatar)[role];return 'none';}
 function bowl(g,line,type,now,power='none'){
  if(g.settings.controls==='easy')power=automaticPower(g,'bowl');
- usePower(g,'bowl',power);const base=g.settings.controls==='easy'?{pace:2200,slower:2800,spin:2500}[type]:DURATIONS[type];const duration=power==='blaze'?Math.max(1200,Math.round(base*.85)):power==='float'?Math.round(base*1.15):base;
- g.ballSerial++;g.delivery={id:randomUUID(),serial:g.ballSerial,line,type,bowlingPower:power,battingPower:'none',easy:g.settings.controls==='easy',releaseAt:now+1100,impactAt:now+1100+duration,shot:null,roll:randomInt(100)};g.phase='flight';g.deadline=g.delivery.impactAt+(g.delivery.easy?700:550);
+ usePower(g,'bowl',power);const base=g.settings.controls==='easy'?{pace:1700,slower:2400,spin:2000}[type]:DURATIONS[type];const duration=power==='blaze'?Math.max(1200,Math.round(base*.85)):power==='float'?Math.round(base*1.15):base;
+ const targets=[35,45,55,65,75,85].filter(n=>n!==g.lastTarget);const target=targets[randomInt(targets.length)];g.lastTarget=target;
+ g.ballSerial++;g.delivery={id:randomUUID(),serial:g.ballSerial,target,line,type,bowlingPower:power,battingPower:'none',easy:g.settings.controls==='easy',releaseAt:now+1100,impactAt:now+1100+duration,shot:null,roll:randomInt(100)};g.phase='flight';g.deadline=g.delivery.impactAt+(g.delivery.easy?700:550);
  if(power!=='none')log(g,`${member(g,g.bowling).name} activated ${power.toUpperCase()}.`);
- if(member(g,g.batting).bot){const jitter=Math.round(randomInt(g.delivery.easy?-325:-180,g.delivery.easy?326:181)*(['blaze','float'].includes(power)?1.1:1)),aim=randomInt(100)<(['curve','latebreak'].includes(power)?70:78)?line:randomInt(-1,2);g.botShot={at:g.delivery.impactAt+jitter,aim,kind:randomInt(100)<35?'loft':'drive',power:botPower(g,'bat')};}else g.botShot=null;
+ if(member(g,g.batting).bot){const jitter=Math.round(randomInt(g.delivery.easy?-140:-180,g.delivery.easy?141:181)*(['blaze','float'].includes(power)?1.1:1)),aim=randomInt(100)<(['curve','latebreak'].includes(power)?70:78)?line:randomInt(-1,2);g.botShot={at:g.delivery.impactAt+jitter,aim,kind:randomInt(100)<35?'loft':'drive',power:botPower(g,'bat')};}else g.botShot=null;
 }
 export function shotResult(d){
  if(d.easy)return easyResult(d);
@@ -38,9 +39,9 @@ export function shotResult(d){
  if(d.battingPower==='rally'&&d.shot?.kind==='defend'&&result.runs===1)return {...result,runs:2,label:'RALLY TWO',feedback:'Quick feet turn a well-timed defence into two runs.'};if(d.battingPower==='shield'&&result.wicket&&result.label==='CAUGHT')return {...result,runs:0,wicket:false,label:'SHIELD SAVE',feedback:'Shield deflected the catch. A dot ball; no runs.'};return result;}
 function easyResult(d){
  if(!d.shot)return {runs:0,wicket:d.line===0,label:d.line===0?'BOWLED':'DOT BALL',feedback:'No hit this ball. Tap once when the indicator turns green.'};
- const timing=d.shot.at-d.impactAt,raw=Math.abs(timing),abs=raw/(d.battingPower==='focus'?1.25:1);
- let runs=abs<=90?6:abs<=150?4:abs<=225?2:abs<=300?1:0;
- if(d.battingPower==='sidestep'&&raw>300&&raw<=450)runs=1;
+ const timing=d.shot.at-d.impactAt,raw=Math.abs(timing),w=easyTiming(d);
+ let runs=raw<=w.six?6:raw<=w.four?4:raw<=w.two?2:raw<=w.hit?1:0;
+ if(d.battingPower==='sidestep'&&raw>w.hit&&raw<=w.rescue)runs=1;
  if(d.battingPower==='rally'&&runs===1)runs=2;
  const wicket=!runs&&(d.line===0||d.roll<35),caught=wicket&&d.line!==0;
  if(caught&&d.battingPower==='shield')return {runs:0,wicket:false,label:'SHIELD SAVE',feedback:'Shield saved a catch. Try hitting when the indicator turns green.',timing};
@@ -112,4 +113,9 @@ export function act(g,id,action,data={},now=Date.now()){
  }
  throw Error('Unknown action.');
 }
-export function view(g,id){return {host:g.host,players:g.players,spectators:g.spectators,settings:g.settings,powers:powerStatus(g),phase:g.phase,deadline:g.deadline,innings:g.innings,batting:g.batting,bowling:g.bowling,scores:g.scores,last:g.last,toss:g.toss,result:g.result,match:g.match,log:g.log,delivery:g.delivery?{id:g.delivery.id,serial:g.delivery.serial,easy:g.delivery.easy,line:g.delivery.line,type:g.delivery.type,bowlingPower:g.delivery.bowlingPower,battingPower:g.delivery.battingPower,releaseAt:g.delivery.releaseAt,impactAt:g.delivery.impactAt,shot:g.delivery.shot}:null,you:id,role:id===g.batting?'batter':id===g.bowling?'bowler':'spectator'};}
+function previewTiming(g){
+ const d=g.delivery;if(!d?.easy)return undefined;
+ const readyPower=!d.shot&&powerStatus(g).battingAvailable?characterFor(member(g,g.batting).avatar).bat:d.battingPower;
+ return {...easyTiming({...d,battingPower:readyPower}),readyPower};
+}
+export function view(g,id){return {host:g.host,players:g.players,spectators:g.spectators,settings:g.settings,powers:powerStatus(g),phase:g.phase,deadline:g.deadline,innings:g.innings,batting:g.batting,bowling:g.bowling,scores:g.scores,last:g.last,toss:g.toss,result:g.result,match:g.match,log:g.log,delivery:g.delivery?{id:g.delivery.id,serial:g.delivery.serial,target:g.delivery.target,easy:g.delivery.easy,timing:previewTiming(g),line:g.delivery.line,type:g.delivery.type,bowlingPower:g.delivery.bowlingPower,battingPower:g.delivery.battingPower,releaseAt:g.delivery.releaseAt,impactAt:g.delivery.impactAt,shot:g.delivery.shot}:null,you:id,role:id===g.batting?'batter':id===g.bowling?'bowler':'spectator'};}

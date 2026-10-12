@@ -7,3 +7,7 @@
 .contact-zone{position:absolute;top:-4px;height:16px;background:#77c87988;border-radius:5px}.quick-hit{position:absolute;bottom:58px;right:18px;background:#233d2d;border:2px solid #9eb58b;font-size:22px;min-width:140px;min-height:64px;touch-action:manipulation;z-index:2}.quick-hit span{display:block;font-size:10px}.quick-hit.hit-now{background:#dafa78;color:#132215;border-color:#efffc3;box-shadow:0 0 22px #dafa7880}.hit-cue{position:absolute;left:20px;bottom:75px;font-weight:800;font-size:20px;color:#e7ffa9;text-shadow:0 2px 5px #112a1c;pointer-events:none}@media(max-width:480px){.quick-hit{right:10px;bottom:49px;min-width:105px;min-height:55px;font-size:18px}.hit-cue{left:10px;bottom:65px;font-size:15px}}
 
 .controls.lobby-top{order:-1;border-color:#91ab56}.lobby-top .settings>label:first-child{color:#dafa78;font-weight:700}
+
+.rescue-zone{position:absolute;top:-4px;height:16px;background:#efa94b88;border:1px solid #efa94b;border-radius:5px}.timing-detail{margin:0;padding:8px 14px;background:#112a1c;color:#d9ebba;font-size:10px;line-height:1.5;letter-spacing:.03em}.timing-wrap{position:relative;z-index:1}
+
+.quick-hit{bottom:96px}.hit-cue{bottom:114px}@media(max-width:480px){.quick-hit{bottom:95px}.hit-cue{bottom:111px}}

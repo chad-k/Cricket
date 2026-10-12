@@ -1,4 +1,4 @@
-import {CHARACTERS,POWERS,characterFor,bendOffset} from './characters.js';
+import {CHARACTERS,POWERS,characterFor,bendOffset,easyTiming} from './characters.js';
 const $=id=>document.getElementById(id),avatars=CHARACTERS.map(c=>c.icon);
 let token;try{token=localStorage.getItem('crease-token')||crypto.randomUUID();localStorage.setItem('crease-token',token);$('name').value=localStorage.getItem('crease-name')||'';}catch{token=crypto.randomUUID();}
 let batPower='none',bowlPower='none';
@@ -8,7 +8,7 @@ $('code').value=(new URLSearchParams(location.search).get('room')||'').toUpperCa
 function error(message){$('error').textContent=message;$('error').hidden=!message;clearTimeout(errorTimer);if(message)errorTimer=setTimeout(()=>error(''),6500);}
 function element(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;}
 function selection(id,value){for(const b of $(id).querySelectorAll('button')){b.classList.toggle('selected',b.dataset.value===String(value));b.setAttribute('aria-pressed',String(b.dataset.value===String(value)));}}
-function characterCard(c){const box=element('div');box.append(element('b',c.icon+' '+c.name+' · '+c.personality),element('p','Bat · '+POWERS[c.bat].name+': '+(POWERS[c.bat].easyDescription||POWERS[c.bat].description)+' (Easy controls)'),element('p','Bowl · '+POWERS[c.bowl].name+': '+POWERS[c.bowl].description));return box;}
+function characterCard(c){const box=element('div');box.append(element('b',c.icon+' '+c.name+' · '+c.personality),element('p','Bat · '+POWERS[c.bat].name+': '+(POWERS[c.bat].easyDescription||POWERS[c.bat].description)+' (Easy controls)'),element('p','Bowl · '+POWERS[c.bowl].name+': '+(POWERS[c.bowl].easyDescription||POWERS[c.bowl].description)+' (Easy controls)'));return box;}
 function previewAvatar(){const c=characterFor(avatar);$('avatar-preview').replaceChildren(characterCard(c));for(const [i,b] of [...$('avatars').children].entries()){b.classList.toggle('selected',avatar===i);b.setAttribute('aria-pressed',String(avatar===i));}}
 for(let i=0;i<avatars.length;i++){const c=CHARACTERS[i],b=element('button',c.icon);b.title=c.name+' · '+c.personality;b.setAttribute('aria-label','Choose '+c.name);b.onclick=()=>{avatar=i;previewAvatar();};$('avatars').append(b);const pick=element('button');pick.append(characterCard(c));pick.onclick=()=>guarded('avatar',{avatar:i});$('lobby-avatars').append(pick);}
 previewAvatar();
@@ -30,7 +30,7 @@ $('watch').onclick=()=>{if(!$('name').value.trim())return error('Enter your name
 $('bot').onclick=()=>guarded('bot');$('remove-bot').onclick=()=>guarded('removeBot');$('start').onclick=()=>guarded('start');$('rematch').onclick=()=>guarded('rematch');
 $('choose-bat').onclick=()=>guarded('toss',{choice:'bat'});$('choose-bowl').onclick=()=>guarded('toss',{choice:'bowl'});
 for(const id of ['overs','wickets','mode','controls'])$(id).onchange=()=>guarded('settings',{overs:Number($('overs').value),wickets:Number($('wickets').value),mode:$('mode').value,controls:$('controls').value});
-$('bowl').onclick=()=>guarded('bowl',state?.game.settings.controls==='easy'?{line:Math.floor(Math.random()*3)-1,type:['pace','slower','spin'][Math.floor(Math.random()*3)]}:{line,type,power:bowlPower});
+$('bowl').onclick=()=>guarded('bowl',state?.game.settings.controls==='easy'?{line:Math.floor(Math.random()*3)-1,type}:{line,type,power:bowlPower});
 $('invite').onclick=async()=>{const link=location.origin+'/?room='+state.code;try{await navigator.clipboard.writeText(link);$('invite').textContent='Invite copied ✓';setTimeout(()=>$('invite').textContent='Copy invite link ↗',2000);}catch{prompt('Copy this invite link',link);}};
 async function swing(){const g=state?.game,d=g?.delivery,t=serverTime();if(!d||g.role!=='batter'||g.phase!=='flight'||d.shot||shotPending||!clockReady||t<d.releaseAt||t>d.impactAt+(d.easy?450:350))return;shotPending=true;render();const ok=await action('swing',{delivery:d.id,aim,kind,at:t,power:batPower});if(!ok)shotPending=false;render();}
 $('swing').onclick=swing;$('quick-hit').onclick=swing;
@@ -81,7 +81,7 @@ function render(){
   for(const b of $(role+'-power').children)b.disabled=busy||(role==='bat'&&(!!g.delivery?.shot||shotPending))||(b.dataset.value!=='none'&&!available);
  }
  $('ground-title').textContent=g.phase==='flight'?g.delivery.type.toUpperCase()+' DELIVERY':g.phase==='finished'?'MATCH COMPLETE':'THE CREASE';
- $('ground-hint').textContent=g.phase==='ready'?(g.role==='batter'?(easy?'Tap when the indicator turns green.':'Watch the ball. Match its lane.'):(easy?'Just tap Bowl.':'Choose a line and delivery type.')):g.phase==='flight'?'Contact at the glowing crease':g.phase==='interval'?'New innings coming up':g.phase==='lobby'?'Your next rivalry starts here.':'';
+ $('ground-hint').textContent=g.phase==='ready'?(g.role==='batter'?(easy?'Tap when the indicator turns green.':'Watch the ball. Match its lane.'):(easy?'Choose Fast, Slow or Spin, then Bowl.':'Choose a line and delivery type.')):g.phase==='flight'?'Contact at the glowing crease':g.phase==='interval'?'New innings coming up':g.phase==='lobby'?'Your next rivalry starts here.':'';
  $('result-call').replaceChildren();if(g.phase==='result'){$('result-call').append(element('div',g.last.label),element('small',g.last.feedback));}else if(g.phase==='interval'){$('result-call').append(element('div','TARGET '+(g.scores[0].runs+1)),element('small','Swap roles. The chase is on.'));}else if(g.phase==='finished')$('result-call').append(element('div',g.result.tied?'MATCH TIED':'HOWZAT!'),element('small',g.result.text));
 }
 // The pitch uses the same release and contact times as the server. Rendering never decides scores.
@@ -117,12 +117,15 @@ function draw(t){
   if(g.phase==='result'&&g.last.runs){const a=Math.min(1,(t-g.last.resolvedAt)/1400),dir=g.last.aim===0?.4:g.last.aim*1.1;const tx=480+Math.sin(dir)*390,ty=150;bx=480+(tx-480)*a;by=420+(ty-420)*a-(g.last.runs===6?140:35)*Math.sin(a*Math.PI);ellipse(bx,by,6,6,'#ffab77');}
  }
  ctx.fillStyle='#dcedbd';ctx.font='10px ui-sans-serif,system-ui';ctx.textAlign='center';for(const [i,label]of[[-1,'OFF'],[0,'STUMPS'],[1,'LEG']])ctx.fillText(label,480+i*58,528);
- const s=state?.game,del=s?.delivery;const progress=del?(t-del.releaseAt)/(del.impactAt-del.releaseAt):0;
- $('timing-marker').style.left=Math.max(0,Math.min(100,progress*75))+'%';
- const easy=s?.settings.controls==='easy',flight=del?del.impactAt-del.releaseAt:2200,windowMs=easy?300:90,zoneWidth=windowMs/flight*150;
- $('contact-zone').hidden=!easy;$('contact-zone').style.left=(75-zoneWidth/2)+'%';$('contact-zone').style.width=zoneWidth+'%';const sweet=easy?90/flight*150:10;$('sweet-zone').style.left=(75-sweet/2)+'%';$('sweet-zone').style.width=sweet+'%';
- const hitNow=s?.phase==='flight'&&del&&Math.abs(t-del.impactAt)<=300&&!del.shot&&!shotPending;
- $('hit-cue').textContent=del?.shot||shotPending?'SHOT PLAYED':s?.phase!=='flight'||t<del.releaseAt?'GET READY':hitNow?'HIT NOW!':t>del.impactAt+300?'TOO LATE':'WAIT…';$('quick-hit').classList.toggle('hit-now',!!hitNow);
+ const s=state?.game,del=s?.delivery;const target=del?.easy?del.target:75;const progress=del?(t-del.releaseAt)/(del.impactAt-del.releaseAt):0;
+ $('timing-marker').style.left=Math.max(0,Math.min(100,progress*target))+'%';
+ const easy=s?.settings.controls==='easy',flight=del?del.impactAt-del.releaseAt:1700,w=del?.timing||easyTiming(),windowMs=easy?w.hit:90,zoneWidth=windowMs/flight*target*2;
+ $('contact-zone').hidden=!easy;$('contact-zone').style.left=(target-zoneWidth/2)+'%';$('contact-zone').style.width=zoneWidth+'%';const sweet=easy?w.six/flight*target*2:10;$('sweet-zone').style.left=(target-sweet/2)+'%';$('sweet-zone').style.width=sweet+'%';
+ const rescueWidth=w.rescue/flight*target*2;$('rescue-zone').hidden=!easy||w.rescue<=w.hit;$('rescue-zone').style.left=(target-rescueWidth/2)+'%';$('rescue-zone').style.width=rescueWidth+'%';show('timing-detail',easy);
+ const timingText='HIT WINDOW '+(w.hit*2)+' ms · SIX WINDOW '+(w.six*2)+' ms'+(del?.bowlingPower&&del.bowlingPower!=='none'?' · '+POWERS[del.bowlingPower].name+' −'+Math.round((1-w.bowlingScale)*100)+'%':'')+(w.readyPower&&w.readyPower!=='none'?' · '+POWERS[w.readyPower].name+(w.readyPower==='focus'?' +25%':w.readyPower==='sidestep'?' · amber rescue':w.readyPower==='rally'?' · singles become two':' · catch protection'):'');if($('timing-detail').textContent!==timingText)$('timing-detail').textContent=timingText;
+ const rescueNow=s?.phase==='flight'&&del&&!del.shot&&!shotPending&&Math.abs(t-del.impactAt)>w.hit&&Math.abs(t-del.impactAt)<=w.rescue;
+ const hitNow=s?.phase==='flight'&&del&&Math.abs(t-del.impactAt)<=w.hit&&!del.shot&&!shotPending;
+ $('hit-cue').textContent=del?.shot||shotPending?'SHOT PLAYED':s?.phase!=='flight'||t<del.releaseAt?'GET READY':hitNow?'HIT NOW!':rescueNow?'SIDESTEP SAVE!':t>del.impactAt+w.rescue?'TOO LATE':'WAIT…';$('quick-hit').classList.toggle('hit-now',!!hitNow);
  $('swing').firstChild.textContent=del?.shot||shotPending?'SHOT PLAYED ':s?.phase==='ready'?'WAIT FOR THE BOWLER ':del&&t<del.releaseAt?'GET READY ':easy?'HIT ':'SWING ';
  $('swing').disabled=!s||s.role!=='batter'||s.phase!=='flight'||!del||!!del.shot||shotPending||!clockReady||t<del.releaseAt||t>del.impactAt+(del.easy?450:350);
  $('quick-hit').disabled=$('swing').disabled;$('quick-hit').firstChild.textContent=$('swing').firstChild.textContent;

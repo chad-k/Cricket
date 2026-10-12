@@ -1,5 +1,4 @@
 # Crease — Live multiplayer arcade cricket
-# Check out my app at - https://cricket-opwv.onrender.com
 
 A standalone browser game for **two active players**, with up to eight spectators, private room codes, room chat, avatars, timed batting, player-controlled bowling, and a practice opponent. Upload this project to GitHub and deploy it as a Render **Web Service**.
 
@@ -38,28 +37,49 @@ Match settings appear **above the pitch in the lobby**. The host chooses **Overs
 - Start the match with the toss. Its winner gets 15 seconds to choose batting or bowling. If they do not choose, they bat first.
 - Additional arrivals watch as spectators. Spectators can use chat but cannot control play.
 
-### Easy controls — the new default (v1.4)
+### Easy controls — the new default (v1.6)
 
-You only need **one button while batting**: tap the large **HIT** button on the pitch or press **Space**. Wait for the indicator to enter the green zone and the **HIT NOW** cue to appear. The center gives the best score, but the full green zone makes contact. Aiming and shot selection are automatic. The normal contact window spans **300 ms before to 300 ms after contact**, so you have 0.6 seconds to connect.
+You only need **one button while batting**: tap the large **HIT** button on the pitch or press **Space**. Wait for the indicator to enter the green zone and the **HIT NOW** cue to appear. The center gives the best score, but the full green zone makes contact. Aiming and shot selection are automatic. The normal contact window spans **100 ms before to 100 ms after contact on a Fast delivery, before powers**, so you have 0.20 seconds to connect on a normal Fast delivery.
 
 | Timing error in either direction | Runs |
 | --- | --- |
-| Up to 90 ms | 6 |
-| Up to 150 ms | 4 |
-| Up to 225 ms | 2 |
-| Up to 300 ms | 1 |
-| Beyond 300 ms | Miss (unless a power rescues it) |
+| Up to 30 ms | 6 |
+| Up to 55 ms | 4 |
+| Up to 80 ms | 2 |
+| Up to 100 ms | 1 |
+| Beyond 100 ms | Miss (unless a power rescues it) |
 
-Base flights last 2.2 seconds for pace, 2.5 seconds for spin and 2.8 seconds for slower balls. A 1.1-second run-up gives warning. Missing a central ball can still bowl you; badly timed off/leg shots can be caught. One hit per ball still applies. Feedback tells you whether to hit earlier or later. The practice bot has imperfect timing too.
+Base flights last 1.7 seconds for Fast, 2.0 seconds for Spin and 2.4 seconds for Slow. A 1.1-second run-up gives warning. Missing a central ball can still bowl you; badly timed off/leg shots can be caught. One hit per ball still applies. Feedback tells you whether to hit earlier or later. The practice bot has imperfect timing too.
 
-**Bowling:** press **Bowl delivery**. The client picks a line and delivery for you. No line or type selection is needed.
+**Bowling:** choose **Fast**, **Slow**, or **Spin**, then press **Bowl delivery**. Your selection controls the actual server delivery; the line is still automatic. Your opponent sees the delivery type only after you bowl. A missed 20-second bowling deadline triggers an automatic delivery.
+
+| Delivery | Flight before powers | Total hit window before powers | Tactic |
+| --- | --- | --- | --- |
+| Fast | 1.7 s | 200 ms | Reduce reaction time |
+| Slow | 2.4 s | 170 ms | Bait an early hit; requires more precise timing |
+| Spin | 2.0 s | 180 ms | Use a late bend and tighter timing |
+
+Mix deliveries to break the batter's rhythm. Avatar powers remain automatic and apply on top of the selected delivery.
+
+**Moving target:** the green hit zone relocates along the timing bar for each delivery, between 35% and 85% of its length. Consecutive balls never use the same position. The server chooses the position, and everyone sees the same target. It stays fixed during that delivery so the batter can read it. Marker speed and zone width are calculated together: the marker reaches the zone center at the ball's contact time, and the zone width always corresponds to the scoring window. This changes where to look without secretly changing the timing rules.
 
 **Superpowers:** your avatar stays distinctive without another button. Bowling power activates on the first delivery of each over. Batting power is used automatically only when it improves the result, at most once per over:
 
 - Focus widens timing windows by 25%.
 - Shield converts a catch into a dot, never saving a bowled dismissal.
-- Sidestep rescues a near miss between 300 and 450 ms off contact for one run.
+- Sidestep adds an amber rescue zone up to 50% beyond the current contact window for one run (up to 150 ms either side on an ordinary Fast delivery).
 - Rally converts a single into two runs.
+
+**Powers now change the timing bar:** the server publishes the same thresholds it uses for scoring. The green contact zone, white six zone, HIT NOW cue and numeric window labels follow those thresholds. Focus shows its wider zone while charged; once consumed, the next ball returns to the normal zone. Sidestep has a separate amber rescue zone and SIDESTEP SAVE cue. Shield protects against a catch and Rally improves a single; neither widens contact.
+
+| Bowling power | Change to all one-button timing windows | Other effect |
+| --- | --- | --- |
+| Blaze | 10% narrower | 15% faster flight |
+| Curve | 20% narrower | Smooth bend |
+| Float | 20% narrower | 15% slower flight |
+| Late Break | 25% narrower | Smaller late bend |
+
+Slow first scales the base windows by 0.85, Spin by 0.90, and Fast by 1. Bowling powers then apply their own scale. Focus multiplies the bowling-adjusted windows by 1.25; Sidestep extends that delivery's contact limit by 50%. Thresholds are rounded to whole milliseconds. Powers still have one charge per role per over. These timing modifiers apply to one-button controls; Advanced retains its existing rules. The basic Fast hit window is 200 ms total and the six window 60 ms total, before powers.
 
 Because aiming is automatic, Sidestep uses a timing rescue instead of lane correction in Easy controls. Bowling bends stay visible and have the same landing lane; speed powers still vary the flight time. Equal resource limits apply, but human balance still needs playtesting.
 
@@ -170,9 +190,13 @@ Visit `http://localhost:3000`. The `PORT` environment variable can change the li
 npm test
 ```
 
-The 39 automated tests cover host permissions, spectators, toss choices and timeout, automatic bowling, six-ball overs, scoring by shot type, timing rejection, wickets, successful chases, defended targets, ties, rematches, complete bot matches, HTTP routes, room-isolated chat, event-stream reconnects, and hiding the server's catch randomization.
+The 45 automated tests cover host permissions, spectators, toss choices and timeout, automatic bowling, six-ball overs, scoring by shot type, timing rejection, wickets, successful chases, defended targets, ties, rematches, complete bot matches, HTTP routes, room-isolated chat, event-stream reconnects, and hiding the server's catch randomization.
 
 Power tests additionally cover Classic isolation, Focus thresholds, Shield exceptions, delivery speeds, shared charges, over/innings recharge, invalid requests, distinct kits, avatar ownership and selection locks, all eight avatars completing matches, each new power’s limits, public power metadata, and complete Superpowers bot matches.
+
+Tests also check that targets never repeat consecutively, remain in bounds and are included in public state, and that bowling choices produce the expected flight times and scoring windows.
+
+One-button tests additionally verify that every bowling modifier changes both scoring and displayed thresholds, that Focus and Sidestep previews disappear after use, and that Shield/Rally do not widen contact.
 
 Easy-control tests cover default settings, automatic aim, timing bands across every lane, mistakes and missed shots, input validation, automatic power benefits and charge limits.
 
