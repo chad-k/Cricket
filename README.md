@@ -30,22 +30,24 @@ Open the Render URL after deployment. Create a room, copy the invite link, and h
 
 ### Set up a match
 
+Match settings appear **above the pitch in the lobby**. The host chooses **Overs per innings: 1, 2, or 5** before starting the toss. Other players see the selection but cannot change it. To change overs after a match, select **Set up a rematch**.
+
 - Choose **1, 2, or 5 overs** per innings and **1, 3, or 5 wickets**. Defaults: two overs, three wickets.
 - The host can add/remove a practice bot while in the lobby.
 - Start the match with the toss. Its winner gets 15 seconds to choose batting or bowling. If they do not choose, they bat first.
 - Additional arrivals watch as spectators. Spectators can use chat but cannot control play.
 
-### Easy controls — the new default (v1.3)
+### Easy controls — the new default (v1.4)
 
-You only need **one button while batting**: tap the large **HIT** button on the pitch or press **Space**. Wait for the indicator to enter the green zone and the **HIT NOW** cue to appear. The center gives the best score, but the full green zone makes contact. Aiming and shot selection are automatic. The normal contact window spans **600 ms before to 600 ms after contact**, so you have 1.2 seconds to connect.
+You only need **one button while batting**: tap the large **HIT** button on the pitch or press **Space**. Wait for the indicator to enter the green zone and the **HIT NOW** cue to appear. The center gives the best score, but the full green zone makes contact. Aiming and shot selection are automatic. The normal contact window spans **300 ms before to 300 ms after contact**, so you have 0.6 seconds to connect.
 
 | Timing error in either direction | Runs |
 | --- | --- |
-| Up to 180 ms | 6 |
-| Up to 300 ms | 4 |
-| Up to 450 ms | 2 |
-| Up to 600 ms | 1 |
-| Beyond 600 ms | Miss (unless a power rescues it) |
+| Up to 90 ms | 6 |
+| Up to 150 ms | 4 |
+| Up to 225 ms | 2 |
+| Up to 300 ms | 1 |
+| Beyond 300 ms | Miss (unless a power rescues it) |
 
 Base flights last 2.2 seconds for pace, 2.5 seconds for spin and 2.8 seconds for slower balls. A 1.1-second run-up gives warning. Missing a central ball can still bowl you; badly timed off/leg shots can be caught. One hit per ball still applies. Feedback tells you whether to hit earlier or later. The practice bot has imperfect timing too.
 
@@ -55,7 +57,7 @@ Base flights last 2.2 seconds for pace, 2.5 seconds for spin and 2.8 seconds for
 
 - Focus widens timing windows by 25%.
 - Shield converts a catch into a dot, never saving a bowled dismissal.
-- Sidestep rescues a near miss between 600 and 900 ms off contact for one run.
+- Sidestep rescues a near miss between 300 and 450 ms off contact for one run.
 - Rally converts a single into two runs.
 
 Because aiming is automatic, Sidestep uses a timing rescue instead of lane correction in Easy controls. Bowling bends stay visible and have the same landing lane; speed powers still vary the flight time. Equal resource limits apply, but human balance still needs playtesting.
@@ -167,7 +169,7 @@ Visit `http://localhost:3000`. The `PORT` environment variable can change the li
 npm test
 ```
 
-The 37 automated tests cover host permissions, spectators, toss choices and timeout, automatic bowling, six-ball overs, scoring by shot type, timing rejection, wickets, successful chases, defended targets, ties, rematches, complete bot matches, HTTP routes, room-isolated chat, event-stream reconnects, and hiding the server's catch randomization.
+The 39 automated tests cover host permissions, spectators, toss choices and timeout, automatic bowling, six-ball overs, scoring by shot type, timing rejection, wickets, successful chases, defended targets, ties, rematches, complete bot matches, HTTP routes, room-isolated chat, event-stream reconnects, and hiding the server's catch randomization.
 
 Power tests additionally cover Classic isolation, Focus thresholds, Shield exceptions, delivery speeds, shared charges, over/innings recharge, invalid requests, distinct kits, avatar ownership and selection locks, all eight avatars completing matches, each new power’s limits, public power metadata, and complete Superpowers bot matches.
 

@@ -1,6 +1,6 @@
 {
   "name": "crease-live-cricket",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "private": true,
   "type": "module",
   "description": "Live two-player arcade cricket with server-controlled matches",

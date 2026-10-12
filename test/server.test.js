@@ -18,3 +18,12 @@ test('HTTP enforces avatar ownership, selection lock and public power metadata',
  const bad=await f.post(bowler,{action:'bowl',code,match:1,line:0,type:'pace',power:'curve'});assert.equal(bad.status,400);
  const good=await f.post(bowler,{action:'bowl',code,match:1,line:0,type:'pace',power:'blaze'});assert.equal(good.status,200);assert.equal(good.game.delivery.bowlingPower,'blaze');assert.equal(good.game.powers.bowlingAvailable,false);
 });
+
+test('All overs options have valid markup and the host can select each before the toss',async t=>{
+ const f=await fixture(t),html=await (await fetch(f.origin+'/')).text();
+ const select=html.match(/<select id="overs">([\s\S]*?)<\/select>/)[1];
+ assert.deepEqual([...select.matchAll(/<option value="(\d+)"/g)].map(m=>Number(m[1])),[1,2,5]);
+ assert.equal((select.match(/<\/option>/g)||[]).length,3);
+ assert.ok(!html.includes('</option value='));
+ for(const overs of [1,2,5]){const r=await f.post(f.a,{action:'settings',code:f.created.code,match:0,overs,wickets:3});assert.equal(r.status,200);assert.equal(r.game.settings.overs,overs);}
+});

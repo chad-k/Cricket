@@ -24,9 +24,9 @@ function botPower(g,role){const status=powerStatus(g),available=role==='bat'?sta
 function bowl(g,line,type,now,power='none'){
  if(g.settings.controls==='easy')power=automaticPower(g,'bowl');
  usePower(g,'bowl',power);const base=g.settings.controls==='easy'?{pace:2200,slower:2800,spin:2500}[type]:DURATIONS[type];const duration=power==='blaze'?Math.max(1200,Math.round(base*.85)):power==='float'?Math.round(base*1.15):base;
- g.ballSerial++;g.delivery={id:randomUUID(),serial:g.ballSerial,line,type,bowlingPower:power,battingPower:'none',easy:g.settings.controls==='easy',releaseAt:now+1100,impactAt:now+1100+duration,shot:null,roll:randomInt(100)};g.phase='flight';g.deadline=g.delivery.impactAt+(g.delivery.easy?1150:550);
+ g.ballSerial++;g.delivery={id:randomUUID(),serial:g.ballSerial,line,type,bowlingPower:power,battingPower:'none',easy:g.settings.controls==='easy',releaseAt:now+1100,impactAt:now+1100+duration,shot:null,roll:randomInt(100)};g.phase='flight';g.deadline=g.delivery.impactAt+(g.delivery.easy?700:550);
  if(power!=='none')log(g,`${member(g,g.bowling).name} activated ${power.toUpperCase()}.`);
- if(member(g,g.batting).bot){const jitter=Math.round(randomInt(g.delivery.easy?-650:-180,g.delivery.easy?651:181)*(['blaze','float'].includes(power)?1.1:1)),aim=randomInt(100)<(['curve','latebreak'].includes(power)?70:78)?line:randomInt(-1,2);g.botShot={at:g.delivery.impactAt+jitter,aim,kind:randomInt(100)<35?'loft':'drive',power:botPower(g,'bat')};}else g.botShot=null;
+ if(member(g,g.batting).bot){const jitter=Math.round(randomInt(g.delivery.easy?-325:-180,g.delivery.easy?326:181)*(['blaze','float'].includes(power)?1.1:1)),aim=randomInt(100)<(['curve','latebreak'].includes(power)?70:78)?line:randomInt(-1,2);g.botShot={at:g.delivery.impactAt+jitter,aim,kind:randomInt(100)<35?'loft':'drive',power:botPower(g,'bat')};}else g.botShot=null;
 }
 export function shotResult(d){
  if(d.easy)return easyResult(d);
@@ -39,8 +39,8 @@ export function shotResult(d){
 function easyResult(d){
  if(!d.shot)return {runs:0,wicket:d.line===0,label:d.line===0?'BOWLED':'DOT BALL',feedback:'No hit this ball. Tap once when the indicator turns green.'};
  const timing=d.shot.at-d.impactAt,raw=Math.abs(timing),abs=raw/(d.battingPower==='focus'?1.25:1);
- let runs=abs<=180?6:abs<=300?4:abs<=450?2:abs<=600?1:0;
- if(d.battingPower==='sidestep'&&raw>600&&raw<=900)runs=1;
+ let runs=abs<=90?6:abs<=150?4:abs<=225?2:abs<=300?1:0;
+ if(d.battingPower==='sidestep'&&raw>300&&raw<=450)runs=1;
  if(d.battingPower==='rally'&&runs===1)runs=2;
  const wicket=!runs&&(d.line===0||d.roll<35),caught=wicket&&d.line!==0;
  if(caught&&d.battingPower==='shield')return {runs:0,wicket:false,label:'SHIELD SAVE',feedback:'Shield saved a catch. Try hitting when the indicator turns green.',timing};
@@ -107,7 +107,7 @@ export function act(g,id,action,data={},now=Date.now()){
   if(!g.delivery.easy&&(![-1,0,1].includes(data.aim)||!['defend','drive','loft'].includes(data.kind)))throw Error('Choose a batting lane and shot.');
   // Bound the client clock estimate; the server owns scoring and delivery timing.
   if(!Number.isFinite(data.at)||data.at<now-220||data.at>now+80)throw Error('Timing out of sync. Wait for the next ball.');
-  const at=Math.min(now,data.at);if(at<g.delivery.releaseAt||at>g.delivery.impactAt+(g.delivery.easy?900:350))throw Error('Swing while the ball is live.');
+  const at=Math.min(now,data.at);if(at<g.delivery.releaseAt||at>g.delivery.impactAt+(g.delivery.easy?450:350))throw Error('Swing while the ball is live.');
   const shot={at,aim:g.delivery.easy?g.delivery.line:data.aim,kind:g.delivery.easy?'auto':data.kind};const power=g.delivery.easy?automaticPower(g,'bat',shot):data.power??'none';usePower(g,'bat',power);g.delivery.battingPower=power;g.delivery.shot=shot;if(g.delivery.battingPower!=='none')log(g,`${p.name} activated ${g.delivery.battingPower.toUpperCase()}.`);return;
  }
  throw Error('Unknown action.');

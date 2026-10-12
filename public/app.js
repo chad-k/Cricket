@@ -32,7 +32,7 @@ $('choose-bat').onclick=()=>guarded('toss',{choice:'bat'});$('choose-bowl').oncl
 for(const id of ['overs','wickets','mode','controls'])$(id).onchange=()=>guarded('settings',{overs:Number($('overs').value),wickets:Number($('wickets').value),mode:$('mode').value,controls:$('controls').value});
 $('bowl').onclick=()=>guarded('bowl',state?.game.settings.controls==='easy'?{line:Math.floor(Math.random()*3)-1,type:['pace','slower','spin'][Math.floor(Math.random()*3)]}:{line,type,power:bowlPower});
 $('invite').onclick=async()=>{const link=location.origin+'/?room='+state.code;try{await navigator.clipboard.writeText(link);$('invite').textContent='Invite copied ✓';setTimeout(()=>$('invite').textContent='Copy invite link ↗',2000);}catch{prompt('Copy this invite link',link);}};
-async function swing(){const g=state?.game,d=g?.delivery,t=serverTime();if(!d||g.role!=='batter'||g.phase!=='flight'||d.shot||shotPending||!clockReady||t<d.releaseAt||t>d.impactAt+(d.easy?900:350))return;shotPending=true;render();const ok=await action('swing',{delivery:d.id,aim,kind,at:t,power:batPower});if(!ok)shotPending=false;render();}
+async function swing(){const g=state?.game,d=g?.delivery,t=serverTime();if(!d||g.role!=='batter'||g.phase!=='flight'||d.shot||shotPending||!clockReady||t<d.releaseAt||t>d.impactAt+(d.easy?450:350))return;shotPending=true;render();const ok=await action('swing',{delivery:d.id,aim,kind,at:t,power:batPower});if(!ok)shotPending=false;render();}
 $('swing').onclick=swing;$('quick-hit').onclick=swing;
 document.addEventListener('keydown',e=>{if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)||!['ready','flight'].includes(state?.game.phase)||state?.game.role!=='batter')return;if(e.code==='Space'){e.preventDefault();if(!e.repeat)swing();}if(state.game.settings.controls==='easy')return;if(e.key.toLowerCase()==='a'||e.key==='ArrowLeft'){aim=Math.max(-1,aim-1);selection('bat-aim',aim);}if(e.key.toLowerCase()==='d'||e.key==='ArrowRight'){aim=Math.min(1,aim+1);selection('bat-aim',aim);}if(['1','2','3'].includes(e.key)){kind=['defend','drive','loft'][Number(e.key)-1];selection('bat-kind',kind);}});
 $('chat-form').onsubmit=async e=>{e.preventDefault();const input=$('chat-input'),text=input.value;if(!text.trim())return;if(await action('chat',{text}))input.value='';};
@@ -40,7 +40,7 @@ const name=id=>state?.game.players.find(p=>p.id===id)?.name||'Player';
 function show(id,on){$(id).hidden=!on;}
 function render(){
  $('create').disabled=$('join').disabled=$('watch').disabled=busy;if(!state)return;
- const g=state.game,host=g.you===g.host,me=g.players.find(p=>p.id===g.you);show('entry',false);show('room',true);$('room-code').textContent=state.code;
+ const g=state.game,host=g.you===g.host,me=g.players.find(p=>p.id===g.you);show('entry',false);show('room',true);$('match-controls').classList.toggle('lobby-top',g.phase==='lobby');$('room-code').textContent=state.code;
  $('match-label').textContent=g.innings?`INNINGS ${g.innings} / 2 · ${g.settings.overs} OVER${g.settings.overs>1?'S':''}`:'LIVE ARCADE CRICKET';
  const phases={lobby:'Warm-up',toss:'The toss',ready:'Set the field',flight:'Ball live',result:'Ball result',interval:'Innings break',finished:'Full time'};$('phase-label').textContent=phases[g.phase];
  $('role-label').textContent=g.phase==='lobby'?(host?'ROOM HOST':me?'PLAYER':'SPECTATOR'):g.role==='batter'?'YOU ARE BATTING':g.role==='bowler'?'YOU ARE BOWLING':'SPECTATING';
@@ -119,12 +119,12 @@ function draw(t){
  ctx.fillStyle='#dcedbd';ctx.font='10px ui-sans-serif,system-ui';ctx.textAlign='center';for(const [i,label]of[[-1,'OFF'],[0,'STUMPS'],[1,'LEG']])ctx.fillText(label,480+i*58,528);
  const s=state?.game,del=s?.delivery;const progress=del?(t-del.releaseAt)/(del.impactAt-del.releaseAt):0;
  $('timing-marker').style.left=Math.max(0,Math.min(100,progress*75))+'%';
- const easy=s?.settings.controls==='easy',flight=del?del.impactAt-del.releaseAt:2200,windowMs=easy?600:90,zoneWidth=windowMs/flight*150;
- $('contact-zone').hidden=!easy;$('contact-zone').style.left=(75-zoneWidth/2)+'%';$('contact-zone').style.width=zoneWidth+'%';const sweet=easy?180/flight*150:10;$('sweet-zone').style.left=(75-sweet/2)+'%';$('sweet-zone').style.width=sweet+'%';
- const hitNow=s?.phase==='flight'&&del&&Math.abs(t-del.impactAt)<=600&&!del.shot&&!shotPending;
- $('hit-cue').textContent=del?.shot||shotPending?'SHOT PLAYED':s?.phase!=='flight'||t<del.releaseAt?'GET READY':hitNow?'HIT NOW!':t>del.impactAt+600?'TOO LATE':'WAIT…';$('quick-hit').classList.toggle('hit-now',!!hitNow);
+ const easy=s?.settings.controls==='easy',flight=del?del.impactAt-del.releaseAt:2200,windowMs=easy?300:90,zoneWidth=windowMs/flight*150;
+ $('contact-zone').hidden=!easy;$('contact-zone').style.left=(75-zoneWidth/2)+'%';$('contact-zone').style.width=zoneWidth+'%';const sweet=easy?90/flight*150:10;$('sweet-zone').style.left=(75-sweet/2)+'%';$('sweet-zone').style.width=sweet+'%';
+ const hitNow=s?.phase==='flight'&&del&&Math.abs(t-del.impactAt)<=300&&!del.shot&&!shotPending;
+ $('hit-cue').textContent=del?.shot||shotPending?'SHOT PLAYED':s?.phase!=='flight'||t<del.releaseAt?'GET READY':hitNow?'HIT NOW!':t>del.impactAt+300?'TOO LATE':'WAIT…';$('quick-hit').classList.toggle('hit-now',!!hitNow);
  $('swing').firstChild.textContent=del?.shot||shotPending?'SHOT PLAYED ':s?.phase==='ready'?'WAIT FOR THE BOWLER ':del&&t<del.releaseAt?'GET READY ':easy?'HIT ':'SWING ';
- $('swing').disabled=!s||s.role!=='batter'||s.phase!=='flight'||!del||!!del.shot||shotPending||!clockReady||t<del.releaseAt||t>del.impactAt+(del.easy?900:350);
+ $('swing').disabled=!s||s.role!=='batter'||s.phase!=='flight'||!del||!!del.shot||shotPending||!clockReady||t<del.releaseAt||t>del.impactAt+(del.easy?450:350);
  $('quick-hit').disabled=$('swing').disabled;$('quick-hit').firstChild.textContent=$('swing').firstChild.textContent;
  $('countdown').textContent=s?.deadline?Math.max(0,Math.ceil((s.deadline-t)/1000))+'s':'';
  requestAnimationFrame(()=>draw(serverTime()));
