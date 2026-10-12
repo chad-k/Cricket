@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {create,act,tick,view,shotResult,DURATIONS} from '../game.js';
 import {CHARACTERS,characterFor,bendOffset} from '../public/characters.js';
-function game(mode='super',avatar=1){const g=create('a','Alice',avatar);act(g,'b','join',{name:'Bob',avatar});act(g,'a','settings',{overs:2,wickets:5,mode});act(g,'a','start',{},0);act(g,g.toss.winner,'toss',{choice:'bat'},1);return g;}
+function game(mode='super',avatar=1){const g=create('a','Alice',avatar);act(g,'b','join',{name:'Bob',avatar});act(g,'a','settings',{overs:2,wickets:5,mode,controls:'manual'});act(g,'a','start',{},0);act(g,g.toss.winner,'toss',{choice:'bat'},1);return g;}
 function bowl(g,power='none'){act(g,g.bowling,'bowl',{line:0,type:'pace',power},g.ballSerial*10000+100);return g.delivery;}
 function swing(g,power='none'){const d=g.delivery;act(g,g.batting,'swing',{delivery:d.id,aim:0,kind:'drive',at:d.impactAt,power},d.impactAt);}
 function end(g){tick(g,g.deadline);tick(g,g.deadline);}
@@ -21,7 +21,7 @@ test('All eight fixed kits are distinct, with identical charge budgets and Class
   const classic=game('classic',avatar);bowl(classic);swing(classic);assert.equal(shotResult(classic.delivery).runs,4);
  }
 });
-test('Only host can select mode and settings lock at toss',()=>{const g=create('a','Alice');act(g,'b','join',{name:'Bob'});assert.throws(()=>act(g,'b','settings',{overs:1,wickets:3,mode:'super'}));assert.throws(()=>act(g,'a','settings',{overs:1,wickets:3,mode:'unknown'}));act(g,'a','start',{},0);assert.throws(()=>act(g,'a','settings',{overs:1,wickets:3,mode:'super'}));});
+test('Only host can select mode and settings lock at toss',()=>{const g=create('a','Alice');act(g,'b','join',{name:'Bob'});assert.throws(()=>act(g,'b','settings',{overs:1,wickets:3,mode:'super',controls:'manual'}));assert.throws(()=>act(g,'a','settings',{overs:1,wickets:3,mode:'unknown'}));act(g,'a','start',{},0);assert.throws(()=>act(g,'a','settings',{overs:1,wickets:3,mode:'super',controls:'manual'}));});
 test('Superpowers bot matches finish under the same charge rules',()=>{for(let i=0;i<8;i++){const g=create('a','Alice');act(g,'a','bot');act(g,'a','settings',{overs:1,wickets:1,mode:'super'});act(g,'a','start',{},0);for(let t=0;t<240000&&g.phase!=='finished';t+=50)tick(g,t);assert.equal(g.phase,'finished');}});
 
 test('Avatars can change only in lobby; every kit rejects every unowned power',()=>{

@@ -1,9 +1,9 @@
 // Shared by the server and client so displayed kits match enforced abilities.
 export const POWERS={
- focus:{name:'Focus',description:'25% wider timing windows for one swing. Still requires the correct lane.'},
- shield:{name:'Shield',description:'A caught dismissal becomes a dot ball. Cannot save you from being bowled.'},
- sidestep:{name:'Sidestep',description:'Corrects an aim one lane away, but caps this shot at two runs. Timing still matters.'},
- rally:{name:'Rally',description:'A correctly aimed defence within 180 ms scores two instead of one. No help for drives or lofts.'},
+ focus:{easyDescription:'Automatically widens timing windows by 25% when it would improve your hit.',name:'Focus',description:'25% wider timing windows for one swing. Still requires the correct lane.'},
+ shield:{easyDescription:'Automatically saves a caught dismissal as a dot ball. Cannot protect the stumps.',name:'Shield',description:'A caught dismissal becomes a dot ball. Cannot save you from being bowled.'},
+ sidestep:{easyDescription:'Automatically turns a near miss (600–900 ms off) into a single.',name:'Sidestep',description:'Corrects an aim one lane away, but caps this shot at two runs. Timing still matters.'},
+ rally:{easyDescription:'Automatically turns a single into two runs.',name:'Rally',description:'A correctly aimed defence within 180 ms scores two instead of one. No help for drives or lofts.'},
  blaze:{name:'Blaze',description:'15% shorter flight, never below 1.2 seconds. Same line and scoring rules.'},
  curve:{name:'Curve',description:'A smooth sideways bend, visible throughout flight. Normal speed and landing lane.'},
  float:{name:'Float',description:'15% longer flight to tempt an early swing. Gives a patient batter more reaction time.'},

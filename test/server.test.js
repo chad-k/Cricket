@@ -9,7 +9,7 @@ test('HTTP enforces avatar ownership, selection lock and public power metadata',
  const f=await fixture(t),code=f.created.code;
  await f.post(f.b,{action:'join',code,name:'Bob',avatar:0});
  for(const token of [f.a,f.b]){const r=await f.post(token,{action:'avatar',code,match:0,avatar:1});assert.equal(r.status,200);}
- assert.equal((await f.post(f.a,{action:'settings',code,match:0,overs:1,wickets:3,mode:'super'})).game.settings.mode,'super');
+ assert.equal((await f.post(f.a,{action:'settings',code,match:0,overs:1,wickets:3,mode:'super',controls:'manual'})).game.settings.mode,'super');
  const started=await f.post(f.a,{action:'start',code,match:0});
  assert.equal((await f.post(f.a,{action:'avatar',code,match:1,avatar:2})).status,400);
  const winner=started.game.toss.winner===started.game.players[0].id?f.a:f.b;

@@ -35,7 +35,34 @@ Open the Render URL after deployment. Create a room, copy the invite link, and h
 - Start the match with the toss. Its winner gets 15 seconds to choose batting or bowling. If they do not choose, they bat first.
 - Additional arrivals watch as spectators. Spectators can use chat but cannot control play.
 
-### Superpowers mode (v1.2 — avatar personalities)
+### Easy controls — the new default (v1.3)
+
+You only need **one button while batting**: tap the large **HIT** button on the pitch or press **Space**. Wait for the indicator to enter the green zone and the **HIT NOW** cue to appear. The center gives the best score, but the full green zone makes contact. Aiming and shot selection are automatic. The normal contact window spans **600 ms before to 600 ms after contact**, so you have 1.2 seconds to connect.
+
+| Timing error in either direction | Runs |
+| --- | --- |
+| Up to 180 ms | 6 |
+| Up to 300 ms | 4 |
+| Up to 450 ms | 2 |
+| Up to 600 ms | 1 |
+| Beyond 600 ms | Miss (unless a power rescues it) |
+
+Base flights last 2.2 seconds for pace, 2.5 seconds for spin and 2.8 seconds for slower balls. A 1.1-second run-up gives warning. Missing a central ball can still bowl you; badly timed off/leg shots can be caught. One hit per ball still applies. Feedback tells you whether to hit earlier or later. The practice bot has imperfect timing too.
+
+**Bowling:** press **Bowl delivery**. The client picks a line and delivery for you. No line or type selection is needed.
+
+**Superpowers:** your avatar stays distinctive without another button. Bowling power activates on the first delivery of each over. Batting power is used automatically only when it improves the result, at most once per over:
+
+- Focus widens timing windows by 25%.
+- Shield converts a catch into a dot, never saving a bowled dismissal.
+- Sidestep rescues a near miss between 600 and 900 ms off contact for one run.
+- Rally converts a single into two runs.
+
+Because aiming is automatic, Sidestep uses a timing rescue instead of lane correction in Easy controls. Bowling bends stay visible and have the same landing lane; speed powers still vary the flight time. Equal resource limits apply, but human balance still needs playtesting.
+
+**Classic and Superpowers both support Easy controls.** Only the host can change the match-wide Controls setting, before the toss. Choose **Advanced · manual controls** to use the previous lane, shot and manual power controls described below. This choice applies to both players.
+
+### Avatar powers in Advanced controls
 
 Choose **Superpowers** in the lobby before the toss. Each avatar now has its **own fixed combination** of one batting and one bowling power. Select an avatar before joining, or open **Choose your avatar** in the lobby to change it. Picks lock at the toss; duplicate picks are allowed. Classic remains the default and disables all powers, with identical base stats for every avatar.
 
@@ -69,7 +96,7 @@ Balance is based on equal charge budgets, unchanged base stats, bounded effects,
 
 The interface shows each avatar's personality, powers and limitations in the picker and lobby. The pavilion lists everyone's kit, and the live controls expose only your own power. Colored uniforms, avatar icons, ball colors and batting auras distinguish characters and activations.
 
-### Bowl
+### Bowl (Advanced controls)
 
 Pick a line: **Off**, **Stumps**, or **Leg**. Then choose **Pace**, **Slower**, or **Spin**, and press **Bowl delivery**.
 
@@ -77,7 +104,7 @@ The 1.1-second run-up lets both clients prepare. Pace travels faster, slower bal
 
 You have 20 seconds to bowl. If the deadline passes, the server bowls a random delivery so the match does not stall.
 
-### Bat
+### Bat (Advanced controls)
 
 Match your batting lane to the ball and swing when it reaches the glowing contact crease. The timing bar reaches its marked contact zone at the same moment.
 
@@ -140,9 +167,11 @@ Visit `http://localhost:3000`. The `PORT` environment variable can change the li
 npm test
 ```
 
-The 30 automated tests cover host permissions, spectators, toss choices and timeout, automatic bowling, six-ball overs, scoring by shot type, timing rejection, wickets, successful chases, defended targets, ties, rematches, complete bot matches, HTTP routes, room-isolated chat, event-stream reconnects, and hiding the server's catch randomization.
+The 37 automated tests cover host permissions, spectators, toss choices and timeout, automatic bowling, six-ball overs, scoring by shot type, timing rejection, wickets, successful chases, defended targets, ties, rematches, complete bot matches, HTTP routes, room-isolated chat, event-stream reconnects, and hiding the server's catch randomization.
 
 Power tests additionally cover Classic isolation, Focus thresholds, Shield exceptions, delivery speeds, shared charges, over/innings recharge, invalid requests, distinct kits, avatar ownership and selection locks, all eight avatars completing matches, each new power’s limits, public power metadata, and complete Superpowers bot matches.
+
+Easy-control tests cover default settings, automatic aim, timing bands across every lane, mistakes and missed shots, input validation, automatic power benefits and charge limits.
 
 Client JavaScript was syntax-checked and server/API tests passed. A visual browser/device playtest was not available in the build environment. Before a group match, try a one-over match on two devices to check display size and connection timing.
 
